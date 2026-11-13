@@ -159,7 +159,7 @@ LESSONS.push({
       hook: `<b>Keys live forever; OIDC creds die in an hour.</b>`,
       words: ['long-lived keys', 'IAM user', 'credential leak', 'temporary credentials', 'blast radius'],
       flow: { from: 'job', to: 'gho', label: 'REQUEST', detail: ['request ID token (aud: sts.amazonaws.com)'], color: 'blue' }, focus: ['job', 'gho'],
-      cmds: [{ c: 'aws iam list-access-keys --user-name ci-deployer --query "AccessKeyMetadata[].CreateDate"', o: '[\n    "2023-02-14T03:11:09+00:00"\n]', k: 'err' }] },
+      cmds: [{ c: 'aws iam list-access-keys --user-name ci-deployer --query "AccessKeyMetadata[].CreateDate"', o: '[\n    "2023-02-14T03:11:09+00:00"\n]', k: 'cli' }] },
     { t: 'Identity provider (once)', sub: 'token.actions.githubusercontent.com',
       body: `<p>Create an IAM OIDC identity provider for <code>https://token.actions.githubusercontent.com</code> with audience <code>sts.amazonaws.com</code>. One per AWS account. (In IaC: <code>AWS::IAM::OIDCProvider</code>.)</p>`,
       analogy: `Registering GitHub as a <b>trusted ID issuer</b>, like accepting a government passport office.`,

@@ -6,7 +6,7 @@ window.COURSE = {
  "where": "CI",
  "lab": "cicd",
  "handsOn": "Workflow Simulator challenge",
- "errRe": "##\\[error\\]|error occurred|Error:|FAILED|failed|Issue:|vulnerab",
+ "errRe": "##\\[error\\]|error occurred|Error:|Found \\d+ errors?|^E\\d{4} |failed(?! checks: 0)|Issue:|vulnerab",
  "cats": [
   [
    "all",
