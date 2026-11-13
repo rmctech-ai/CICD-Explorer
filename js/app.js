@@ -298,10 +298,11 @@
     if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) || !$('#searchModal').hidden) return;
     if (e.key === 'ArrowRight') { stop(); next(); } else if (e.key === 'ArrowLeft') { stop(); prev(); } else if (e.key === ' ') { e.preventDefault(); play(); }
   });
-  function setTheme(t) { P.theme = t; save(); document.documentElement.dataset.theme = t; $('#lightBtn').classList.toggle('on', t === 'light'); $('#darkBtn').classList.toggle('on', t === 'dark'); renderStage(); }
+  function setTheme(t) { P.theme = t; save(); try { localStorage.setItem('rmc-theme', t); } catch (e) {} document.documentElement.dataset.theme = t; $('#lightBtn').classList.toggle('on', t === 'light'); $('#darkBtn').classList.toggle('on', t === 'dark'); renderStage(); }
   $('#lightBtn').onclick = () => setTheme('light'); $('#darkBtn').onclick = () => setTheme('dark');
 
   /* ---------- boot ---------- */
+  try { P.theme = localStorage.getItem('rmc-theme') || 'dark'; } catch (e) {}
   document.documentElement.dataset.theme = P.theme; $('#lightBtn').classList.toggle('on', P.theme === 'light'); $('#darkBtn').classList.toggle('on', P.theme === 'dark');
   window.addEventListener('hashchange', () => { const h = (location.hash || '').slice(1).split('/'); if (!byId[h[0]]) return; const i = h[1] != null && h[1] !== '' ? +h[1] : -1; if (h[0] !== st.lesson.id || i !== st.idx) go(h[0], i); });
   const m = (location.hash || '').slice(1).split('/');
