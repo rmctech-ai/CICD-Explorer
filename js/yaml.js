@@ -36,7 +36,7 @@ window.YAML = (function () {
   function parse(text) {
     const raw = String(text).replace(/\t/g, '    ').split('\n');
     const L = [];
-    raw.forEach((r, n) => { if (/^\s*---\s*$/.test(r) || /^\s*\.\.\.\s*$/.test(r)) return; const s = stripComment(r); if (!s.trim()) { L.push({ blank: true, n: n + 1, raw: r }); return; } L.push({ ind: s.match(/^ */)[0].length, t: s.trim(), n: n + 1, raw: r }); });
+    raw.forEach((r, n) => { if (/^---\s*$/.test(r) || /^\.\.\.\s*$/.test(r)) return; const s = stripComment(r); if (!s.trim()) { L.push({ blank: true, n: n + 1, raw: r }); return; } L.push({ ind: s.match(/^ */)[0].length, t: s.trim(), n: n + 1, raw: r }); });
     let i = 0;
     const next = () => { while (i < L.length && L[i].blank) i++; return L[i]; };
     function block(ind) {
@@ -46,7 +46,7 @@ window.YAML = (function () {
     }
     function blockScalar(parentInd, style) {
       const out = []; let base = null; i++;
-      while (i < L.length) { const ln = L[i]; if (ln.blank) { out.push(''); i++; continue; } if (ln.ind <= parentInd) break; if (base == null) base = ln.ind; out.push(ln.raw.slice(base)); i++; }
+      while (i < L.length) { const ln = L[i]; if (ln.blank) { const ri = ln.raw.match(/^ */)[0].length; if (ln.raw.trim() && ri > parentInd) { if (base == null) base = ri; out.push(ln.raw.slice(base)); } else out.push(''); i++; continue; } if (ln.ind <= parentInd) break; if (base == null) base = ln.ind; out.push(ln.raw.slice(base)); i++; }
       while (out.length && out[out.length - 1] === '') out.pop();
       let s = style[0] === '>' ? out.join(' ').replace(/ {2,}/g, ' ') : out.join('\n');
       if (!/-$/.test(style)) s += '\n'; return s;
