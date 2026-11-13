@@ -29,6 +29,61 @@
   function renderXP() { const L = level(); $('#lvlName').textContent = L.name; $('#xpNum').textContent = P.xp; $('#xpFill').style.width = Math.min(100, (P.xp - L.from) / (L.to - L.from) * 100) + '%';
     const total = LESSONS.length; const d = LESSONS.filter(l => P.done[l.id]).length; $('#progTxt').textContent = `${d}/${total} · ${Math.round(d / total * 100)}%`; }
   let tt; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2200); }
+
+  /* ---------- quiz feedback pop-up ---------- */
+  function quizCss() { if (document.getElementById('qpCss')) return; const s = document.createElement('style'); s.id = 'qpCss'; s.textContent = `
+.qp{position:fixed;inset:0;background:rgba(5,10,25,.5);display:grid;place-items:center;z-index:80;padding:16px;animation:qpf .15s ease-out}
+.qp .box{background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:12px;max-width:560px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:qpu .2s ease-out}
+.qp .qph{padding:14px 18px;gap:12px;white-space:nowrap;font-weight:800;letter-spacing:.08em;font-size:15px;display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0}
+.qp .qph.qok{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)} .qp .qph.qno{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)} .qp .qph.sum{background:color-mix(in srgb,var(--blue) 12%,transparent);color:var(--blue)}
+.qp .qph small{font-size:11px;letter-spacing:.1em;opacity:.85}
+.qp .bd{padding:14px 18px;font-size:12.5px;line-height:1.55}
+.qp .qq{font-weight:700;margin-bottom:10px}
+.qp .ans{border:1.5px solid var(--line);border-radius:6px;padding:7px 10px;margin:6px 0;font-size:12px}
+.qp .ans b{font-size:10px;letter-spacing:.1em;display:block;margin-bottom:2px}
+.qp .ans.r{border-color:var(--green);background:color-mix(in srgb,var(--green) 9%,transparent)} .qp .ans.r b{color:var(--green)}
+.qp .ans.w{border-color:var(--red);background:color-mix(in srgb,var(--red) 8%,transparent)} .qp .ans.w b{color:var(--red)}
+.qp .why{margin-top:10px;padding:9px 11px;border-left:3px solid var(--blue);background:color-mix(in srgb,var(--blue) 6%,transparent);border-radius:0 6px 6px 0}
+.qp .why b,.qp .hk b{font-size:10px;letter-spacing:.1em;display:block;color:var(--blue);margin-bottom:2px}
+.qp .hk{margin-top:8px;padding:9px 11px;border-left:3px solid var(--amber);background:color-mix(in srgb,var(--amber) 10%,transparent);border-radius:0 6px 6px 0}
+.qp .hk b{color:#b45309}
+.qp .row{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 16px;flex-wrap:wrap}
+.qp .row button{border:1.5px solid var(--blue);background:var(--blue);color:#fff;border-radius:6px;padding:8px 14px;font-weight:700;font-size:11.5px;letter-spacing:.06em;cursor:pointer;font-family:inherit}
+.qp .row button.gh{background:transparent;color:var(--blue)}
+.qp .it{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px}
+.qp .it i{font-style:normal;font-weight:800;width:16px} .qp .it .qok{color:var(--green)} .qp .it .qno{color:var(--red)}
+.qp .it small{display:block;color:var(--mute);margin-top:2px;font-size:11px}
+.qp .score{font-size:30px;font-weight:800;text-align:center;margin:4px 0 2px} .qp .sc2{text-align:center;color:var(--mute);margin-bottom:10px}
+@keyframes qpf{from{opacity:0}} @keyframes qpu{from{transform:translateY(12px);opacity:0}}`; document.head.appendChild(s); }
+  function qpClose() { const m = document.querySelector('.qp'); if (m) m.remove(); document.removeEventListener('keydown', qpKey, true); }
+  function qpKey(e) { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const b = document.querySelector('.qp [data-qp=main]'); b ? b.click() : qpClose(); } }
+  function qpOpen(html) { quizCss(); qpClose(); const m = document.createElement('div'); m.className = 'qp'; m.innerHTML = `<div class="box" role="dialog" aria-modal="true">${html}</div>`; m.onclick = e => { if (e.target === m) qpClose(); }; document.body.appendChild(m); document.addEventListener('keydown', qpKey, true); const b = m.querySelector('[data-qp=main]'); if (b) b.focus(); return m; }
+  const L = i => String.fromCharCode(65 + i);
+  function stripTags(h) { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent || ''; }
+  function quizPop(l, qi, ai) {
+    const q = l.quiz[qi], ok = ai === q.c, ans = P.quiz[l.id] || {};
+    const allDone = l.quiz.every((_, i) => ans[i] != null);
+    const next = l.quiz.findIndex((_, i) => ans[i] == null);
+    const m = qpOpen(`<div class="qph ${ok ? 'qok' : 'qno'}">${ok ? '✓ CORRECT' : '✕ NOT QUITE'}<small>QUESTION ${qi + 1} OF ${l.quiz.length}${ok ? ' · +20 XP' : ''}</small></div>
+      <div class="bd"><div class="qq">${esc(q.q)}</div>
+      ${ok ? `<div class="ans r"><b>YOUR ANSWER ✓</b>${L(ai)}. ${esc(q.a[ai])}</div>` : `<div class="ans w"><b>YOUR ANSWER ✕</b>${L(ai)}. ${esc(q.a[ai])}</div><div class="ans r"><b>CORRECT ANSWER</b>${L(q.c)}. ${esc(q.a[q.c])}</div>`}
+      <div class="why"><b>WHY</b>${q.why}</div>
+      ${l.hook ? `<div class="hk"><b>★ REMEMBER</b>${l.hook}</div>` : ''}</div>
+      <div class="row">${allDone ? `<button data-qp="main">SEE MY SCORE →</button>` : next >= 0 ? `<button class="gh" data-qp="close">CLOSE</button><button data-qp="main">NEXT QUESTION ↓</button>` : `<button data-qp="main">GOT IT</button>`}</div>`);
+    m.querySelector('[data-qp=main]').onclick = () => { qpClose(); if (allDone) quizSummary(l); else if (next >= 0) { const el = document.querySelector(`.q[data-q="${next}"]`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
+    const c = m.querySelector('[data-qp=close]'); if (c) c.onclick = qpClose;
+  }
+  function quizSummary(l) {
+    const ans = P.quiz[l.id] || {}; const n = l.quiz.length; const right = l.quiz.filter((q, i) => ans[i] === q.c).length;
+    const pct = Math.round(right / n * 100); const msg = pct === 100 ? 'Lesson mastered! 🎉' : pct >= 75 ? 'Strong. Review the one you missed.' : pct >= 50 ? 'Getting there. Re-read the steps, then retry.' : 'Re-watch the diagram steps, then retry.';
+    const m = qpOpen(`<div class="qph sum">LESSON ${l.num} SCORECARD<small>${esc(l.title).toUpperCase()}</small></div><div class="bd">
+      <div class="score" style="color:${pct >= 75 ? 'var(--green)' : pct >= 50 ? '#b45309' : 'var(--red)'}">${right} / ${n}</div><div class="sc2">${pct}% · ${msg}</div>
+      ${l.quiz.map((q, i) => { const ok = ans[i] === q.c; return `<div class="it"><i class="${ok ? 'qok' : 'qno'}">${ok ? '✓' : '✕'}</i><div>${esc(q.q)}<small>${ok ? '' : `You: ${L(ans[i])}. ${esc(q.a[ans[i]])} → `}<b>${L(q.c)}. ${esc(q.a[q.c])}</b> · ${esc(stripTags(q.why))}</small></div></div>`; }).join('')}
+      </div><div class="row">${right < n ? `<button class="gh" data-qp="retry">↻ RETRY WRONG ONES</button>` : ''}<button data-qp="main">${l.next ? 'CONTINUE' : 'DONE'}</button></div>`);
+    m.querySelector('[data-qp=main]').onclick = qpClose;
+    const r = m.querySelector('[data-qp=retry]'); if (r) r.onclick = () => { l.quiz.forEach((q, i) => { if (ans[i] !== q.c) delete ans[i]; }); save(); qpClose(); const y = $('#details').scrollTop; renderDetails(); $('#details').scrollTop = y; toast('Wrong answers cleared. Try again!'); };
+    if (pct === 100) confetti();
+  }
   function confetti() { const cs = ['#1d5bd8', '#16a34a', '#f59e0b', '#7c3aed', '#e11d48']; for (let i = 0; i < 60; i++) { const c = document.createElement('i'); c.className = 'confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % 5]; c.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2600); } }
 
   /* ---------- navigation ---------- */
@@ -229,7 +284,7 @@
     else if (a === 'next') next(); else if (a === 'prev') prev(); else if (a === 'overview') go(st.lesson.id, -1);
     else if (a === 'nextlesson') { const nl = LESSONS[LESSONS.indexOf(st.lesson) + 1]; if (nl) go(nl.id, -1); }
     else if (a === 'playground') { st.tab = 'playground'; renderStage(); }
-    if (t.dataset.a != null) { const qi = +t.closest('.q').dataset.q, ai = +t.dataset.a, l = st.lesson; P.quiz[l.id] = P.quiz[l.id] || {}; if (P.quiz[l.id][qi] != null) return; P.quiz[l.id][qi] = ai; save(); if (ai === l.quiz[qi].c) addXP(20, 'correct answer'); else toast('Not quite — read the explanation'); const y = $('#details').scrollTop; renderDetails(); $('#details').scrollTop = y; }
+    if (t.dataset.a != null) { const qi = +t.closest('.q').dataset.q, ai = +t.dataset.a, l = st.lesson; P.quiz[l.id] = P.quiz[l.id] || {}; if (P.quiz[l.id][qi] != null) return; P.quiz[l.id][qi] = ai; save(); if (ai === l.quiz[qi].c) addXP(20, 'correct answer'); const y = $('#details').scrollTop; renderDetails(); $('#details').scrollTop = y; quizPop(l, qi, ai); }
   });
   $('#playBtn').onclick = play; $('#stepBtn').onclick = () => { stop(); next(); }; $('#prevBtn').onclick = () => { stop(); prev(); }; $('#resetBtn').onclick = () => go(st.lesson.id, -1);
   $('#searchBtn').onclick = openSearch; $('#cheatBtn').onclick = openCheat; $('#brandHome').onclick = e => { e.preventDefault(); go(LESSONS[0].id, -1); };
