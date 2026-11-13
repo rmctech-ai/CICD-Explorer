@@ -1,0 +1,210 @@
+/* ============ 04 TESTING, MATRIX, CACHE ============ */
+LESSONS.push({
+  id: 'testing', num: 4, cat: 'build', layer: 2, mins: 13,
+  title: 'Testing in CI: Lint, Tests, Matrix, Cache', short: 'Trustworthy and fast checks',
+  overview: `<p>CI is only as good as its checks. Run <b>linters</b> (ruff, eslint), <b>unit tests</b> (pytest) and <b>coverage</b> on every PR; use a <b>matrix</b> to test several versions in parallel; <b>cache</b> dependencies to cut minutes; and make the PR <b>required checks</b> so nothing merges red.</p>`,
+  hook: `<b>"Lint, test, matrix, cache, require."</b>`,
+  why: `Fast, reliable checks are what let teams deploy many times a day. Slow or flaky CI gets ignored, and then it protects nothing.`,
+  scene: { type: 'graph', nodes: [
+    { id: 'pr', x: 100, y: 240, icon: 'code', label: 'Pull request', sub: 'feature/invoices' },
+    { id: 'lint', x: 330, y: 110, icon: 'search', label: 'lint', sub: 'ruff', at: 1 },
+    { id: 't311', x: 330, y: 240, icon: 'box', label: 'test (3.11)', sub: 'matrix' },
+    { id: 't312', x: 330, y: 370, icon: 'box', label: 'test (3.12)', sub: 'matrix', at: 2 },
+    { id: 'cache', x: 600, y: 370, icon: 'disk', label: 'pip cache', sub: '45s → 6s', at: 3 },
+    { id: 'gate', x: 600, y: 160, icon: 'shield', label: 'Required checks', sub: 'branch protection', at: 4 }
+  ], edges: [{ a: 'pr', b: 'lint' }, { a: 'pr', b: 't311' }, { a: 'pr', b: 't312' }, { a: 't312', b: 'cache' }, { a: 'lint', b: 'gate' }, { a: 't311', b: 'gate' }] },
+  steps: [
+    { t: 'The test pyramid', sub: 'Many fast, few slow',
+      body: `<p>Lots of <b>unit tests</b> (milliseconds, no network), some <b>integration tests</b> (real DynamoDB Local, LocalStack or a dev account), a few <b>end-to-end</b> tests after deploy. In serverless, unit-test your handler functions directly with sample events (exactly what the Serverless Explorer lab does).</p>`,
+      analogy: `A <b>pyramid</b>: wide base of cheap checks, a small expensive tip.`,
+      hook: `<b>Unit wide, integration some, E2E few.</b>`,
+      words: ['unit test', 'integration test', 'end-to-end', 'test pyramid', 'mocking', 'moto'],
+      flow: { from: 'pr', to: 't311', label: 'TEST', detail: ['12 passed in 0.81s'], color: 'blue' }, focus: ['pr', 't311'],
+      cmds: [{ c: 'pytest -q --cov=app --cov-fail-under=80', o: '............                                     [100%]\n12 passed in 0.81s\nTotal coverage: 86.21%', k: 'tool' }] },
+    { t: 'Lint & format', sub: 'Catch bugs before tests',
+      body: `<p>Linters catch unused imports, undefined names, risky patterns and style drift in seconds: <code>ruff check .</code>, <code>ruff format --check</code>, <code>mypy</code>, <code>cfn-lint</code> for templates, <code>actionlint</code> for workflows. Put them in their own fast job.</p>`,
+      analogy: `A <b>spell-check</b> before the editor reads the whole draft.`,
+      hook: `<b>Lint is the cheapest bug you'll ever fix.</b>`,
+      words: ['ruff', 'linting', 'formatting', 'mypy', 'actionlint', 'pre-commit'],
+      flow: { from: 'pr', to: 'lint', label: 'LINT', detail: ['All checks passed!'], color: 'purple' }, focus: ['pr', 'lint'],
+      cmds: [{ c: 'ruff check .', o: 'app/handler.py:3:8: F401 [*] `os` imported but unused\nFound 1 error.\n[*] 1 fixable with the `--fix` option.', k: 'err' }] },
+    { t: 'Matrix builds', sub: 'Many versions, one job definition',
+      body: `<p><code>strategy: matrix: python-version: ["3.11", "3.12"]</code> creates one job per value, run in parallel; reference it as <code>&#36;{{ matrix.python-version }}</code>. Add OS too and you get a grid. <code>fail-fast: false</code> lets the others finish if one fails.</p>`,
+      analogy: `<b>Test-drive the car on every road type</b> at once.`,
+      hook: `<b>matrix = copy the job for each value.</b>`,
+      words: ['strategy', 'matrix', 'include', 'exclude', 'fail-fast', 'max-parallel'],
+      flow: { from: 'pr', to: 't312', label: 'MATRIX', detail: ['test (3.11) ∥ test (3.12)'], color: 'amber' }, focus: ['t311', 't312'],
+      cmds: [{ c: '    strategy:\n      matrix:\n        python-version: ["3.11", "3.12"]\n    steps:\n      - uses: actions/setup-python@v5\n        with:\n          python-version: ${{ matrix.python-version }}', f: 'ci.yml', o: '', k: 'yaml' }] },
+    { t: 'Caching', sub: 'Stop re-downloading the internet',
+      body: `<p><code>actions/setup-python</code> with <code>cache: pip</code> (or <code>actions/cache</code> with a key from <code>hashFiles('requirements.txt')</code>) restores dependencies between runs. Cache keys change when the lockfile changes, so you never use stale deps.</p>`,
+      analogy: `Keeping the <b>pantry stocked</b> instead of shopping before every meal.`,
+      hook: `<b>Key on the lockfile hash.</b>`,
+      words: ['cache', 'actions/cache', 'hashFiles', 'cache key', 'restore-keys'],
+      flow: { from: 't312', to: 'cache', label: 'CACHE', detail: ['restored pip cache (45s → 6s)'], color: 'green' }, focus: ['t312', 'cache'],
+      cmds: [{ c: '- uses: actions/setup-python@v5\n  with:\n    python-version: "3.12"\n    cache: pip', f: 'ci.yml', o: '', k: 'yaml' }] },
+    { t: 'Required checks', sub: 'Branch protection / rulesets',
+      body: `<p>In repo <b>Settings → Rules</b> (or branch protection), require PRs to main, require the <code>lint</code> and <code>test</code> checks to pass, require reviews, and block force-pushes. Now CI isn't a suggestion, it's a gate. Fix <b>flaky</b> tests quickly or people learn to ignore red.</p>`,
+      analogy: `A <b>turnstile</b> that only opens with a green ticket.`,
+      hook: `<b>Required checks turn CI into a gate.</b>`,
+      words: ['branch protection', 'rulesets', 'required status checks', 'flaky tests', 'code review'],
+      flow: { from: 't311', to: 'gate', label: 'GATE', detail: ['merge blocked until checks pass'], color: 'teal' }, focus: ['lint', 't311', 'gate'],
+      cmds: [{ c: 'gh api repos/rmctech-ai/app/branches/main/protection --jq ".required_status_checks.contexts"', o: '[\n  "lint",\n  "test (3.11)",\n  "test (3.12)"\n]', k: 'gh' }] }
+  ],
+  summary: { title: 'Your checks are fast and trustworthy', sub: 'Pyramid · lint · matrix · cache · required checks', text: `<p>Favor many fast unit tests, some integration, few E2E. Lint in its own fast job. Use a matrix to test versions in parallel and cache dependencies keyed on the lockfile. Make lint and tests required checks on main and kill flaky tests fast.</p>` },
+  quiz: [
+    { q: 'matrix: python-version: ["3.11","3.12"] creates…', a: ['1 job', '2 jobs in parallel', '2 steps', 'Nothing'], c: 1, why: 'One job per value.' },
+    { q: 'A good cache key includes…', a: ['The date', 'hashFiles of the lockfile', 'Random number', 'Run number'], c: 1, why: 'Changes when deps change.' },
+    { q: 'Make CI block merges:', a: ['More tests', 'Required status checks on main', 'Caching', 'Matrix'], c: 1, why: 'Branch protection/rulesets.' },
+    { q: 'Most numerous tests in the pyramid:', a: ['E2E', 'Unit', 'Manual', 'Load'], c: 1, why: 'Fast and cheap.' }
+  ],
+  challenge: { task: 'Turn "test" into a matrix over Python "3.11" and "3.12": add strategy.matrix.python-version and use ${{ matrix.python-version }} in setup-python (with cache: pip). Both matrix jobs must pass.',
+    hint: Y('name: CI', 'on: [push, pull_request]', 'permissions:', '  contents: read', 'jobs:', '  test:', '    runs-on: ubuntu-latest', '    strategy:', '      matrix:', '        python-version: ["3.11", "3.12"]', '    steps:', '      - uses: actions/checkout@v4', '      - uses: actions/setup-python@v5', '        with:', '          python-version: ${{ matrix.python-version }}', '          cache: pip', '      - run: pip install -r requirements.txt', '      - run: pytest'),
+    starter: Y('name: CI', 'on: [push, pull_request]', 'permissions:', '  contents: read', 'jobs:', '  test:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - uses: actions/setup-python@v5', '        with:', '          python-version: "3.12"', '      - run: pip install -r requirements.txt', '      - run: pytest'),
+    check: r => { if (r.error) return r.error; const js = JOBS(r, 'test'); if (js.length !== 2) return 'expected 2 test jobs (one per Python version); found ' + js.length;
+      const vs = js.map(j => (j.steps.find(s => /setup-python/.test(s.uses || '')) || { log: [] }).log.join(' '));
+      if (!vs.some(v => /3\.11/.test(v)) || !vs.some(v => /3\.12/.test(v))) return 'setup-python must use ${{ matrix.python-version }}';
+      if (!vs.every(v => /Cache restored/.test(v))) return 'add cache: pip to setup-python'; return js.every(j => j.status === 'success') ? true : 'both matrix jobs must pass'; } },
+  next: `Deploy jobs need credentials and config. Next: <b>secrets, variables and environments</b> with approval gates.`,
+  cheat: [['pytest -q --cov --cov-fail-under=80', 'tests + coverage'], ['ruff check .', 'lint'], ['strategy: matrix: python-version: [...]', 'matrix'], ['${{ matrix.python-version }}', 'use it'], ['cache: pip', 'faster installs'], ['required status checks', 'merge gate']]
+});
+
+/* ============ 05 SECRETS & ENVIRONMENTS ============ */
+LESSONS.push({
+  id: 'secrets', num: 5, cat: 'build', layer: 3, mins: 13,
+  title: 'Secrets, Variables & Environments', short: 'Config, credentials and approval gates',
+  overview: `<p><b>Secrets</b> are encrypted values (tokens, webhook URLs) exposed to workflows as <code>&#36;{{ secrets.NAME }}</code> and masked in logs. <b>Variables</b> (<code>vars.NAME</code>) hold non-sensitive config. <b>Environments</b> (dev, production) scope secrets and add <b>protection rules</b>: required reviewers, wait timers, branch restrictions.</p>`,
+  hook: `<b>"Secrets hidden, vars visible, environments guarded."</b>`,
+  why: `Leaked CI secrets are one of the most common breach paths (they're committed to repos or printed in logs). Environments with reviewers are how teams do "continuous delivery with a human gate".`,
+  scene: { type: 'graph', nodes: [
+    { id: 'repo', x: 110, y: 240, icon: 'code', label: 'Workflow', sub: '${{ secrets.X }}' },
+    { id: 'sec', x: 350, y: 110, icon: 'vault', label: 'Secrets', sub: 'encrypted · masked' },
+    { id: 'vars', x: 350, y: 380, icon: 'list', label: 'Variables', sub: 'vars.AWS_REGION', at: 2 },
+    { id: 'env', x: 600, y: 240, icon: 'lock', label: 'Environment: production', sub: 'reviewers · branch rule', at: 1 },
+    { id: 'rev', x: 850, y: 240, icon: 'users', label: 'Approver', sub: 'Raul approves', at: 3 }
+  ], edges: [{ a: 'repo', b: 'sec' }, { a: 'repo', b: 'vars' }, { a: 'sec', b: 'env' }, { a: 'env', b: 'rev' }] },
+  steps: [
+    { t: 'Never in the file', sub: 'Git remembers forever',
+      body: `<p>Anything committed is in Git history, forks and clones forever, and bots scan public repos for keys within <b>minutes</b>. If a secret is ever committed: <b>revoke/rotate it first</b>, then clean history. GitHub secret scanning and push protection block many known token formats.</p>`,
+      analogy: `Writing your PIN <b>on the back of the card</b>, then photocopying it for everyone.`,
+      hook: `<b>Committed = compromised. Rotate first.</b>`,
+      words: ['hard-coded secret', 'secret scanning', 'push protection', 'rotate', 'git history'],
+      flow: { from: 'repo', to: 'sec', label: 'MOVE', detail: ['hooks.slack.com/... → secrets.SLACK_WEBHOOK_URL'], color: 'red' }, focus: ['repo', 'sec'],
+      cmds: [{ c: 'gh secret set SLACK_WEBHOOK_URL --body "$SLACK_URL"', o: '✓ Set Actions secret SLACK_WEBHOOK_URL for rmctech-ai/app', k: 'gh' }] },
+    { t: 'Using secrets', sub: 'Masked in logs',
+      body: `<p>Reference with <code>&#36;{{ secrets.NAME }}</code>, ideally passed via <code>env:</code> to the step that needs it. GitHub masks the exact value in logs, but <b>derived</b> values (base64, substrings) are not masked, and secrets are <b>not</b> passed to workflows triggered from forks.</p>`,
+      analogy: `The secret is in a <b>sealed envelope</b> only the right step opens.`,
+      hook: `<b>Scope to one step via env:. Never echo.</b>`,
+      words: ['secrets context', 'masking', 'env:', 'fork PRs', 'GITHUB_TOKEN'],
+      flow: { from: 'sec', to: 'env', label: 'INJECT', detail: ['SLACK_WEBHOOK_URL = ***'], color: 'purple' },
+      cmds: [{ c: '- name: Notify\n  env:\n    WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}\n  run: curl -s -X POST -d \'{"text":"deployed"}\' "$WEBHOOK"', f: 'deploy.yml', o: '', k: 'yaml' }] },
+    { t: 'Variables', sub: 'Non-secret config',
+      body: `<p>Region, account alias, feature flags: <code>vars.AWS_REGION</code>. Visible and editable in settings without a code change. Organization → repository → environment levels, most specific wins.</p>`,
+      analogy: `<b>Notes on the fridge</b> everyone can read.`,
+      hook: `<b>Sensitive → secrets. Everything else → vars.</b>`,
+      words: ['vars context', 'configuration variables', 'organization variables', 'precedence'],
+      flow: { from: 'repo', to: 'vars', label: 'VARS', detail: ['AWS_REGION = ap-southeast-1'], color: 'amber' }, focus: ['repo', 'vars'],
+      cmds: [{ c: 'gh variable set AWS_REGION --body ap-southeast-1', o: '✓ Created variable AWS_REGION for rmctech-ai/app', k: 'gh' }] },
+    { t: 'Environments', sub: 'Scoped secrets + rules',
+      body: `<p>A job with <code>environment: production</code> gets production's secrets/vars and must pass its <b>protection rules</b>: required reviewers, a wait timer, and "deployments only from main". The run pauses until someone approves. Each environment shows a deployment history.</p>`,
+      analogy: `A <b>vault room</b>: different keys inside, and a guard who asks for a second signature.`,
+      hook: `<b>environment: production = gated + scoped.</b>`,
+      words: ['environment', 'protection rules', 'required reviewers', 'deployment branches', 'wait timer'],
+      flow: { from: 'env', to: 'rev', label: 'APPROVE', detail: ['⏸ waiting for review'], color: 'green' }, focus: ['env', 'rev'],
+      cmds: [{ c: '  deploy-prod:\n    needs: deploy-dev\n    runs-on: ubuntu-latest\n    environment: production\n    steps: [...]', f: 'deploy.yml', o: '', k: 'yaml' }] },
+    { t: 'GITHUB_TOKEN', sub: 'The built-in credential',
+      body: `<p>Every run gets an automatic <code>GITHUB_TOKEN</code> scoped to the repo, valid only for the run. Its power is set by <code>permissions:</code> (lesson 10). Prefer it over personal access tokens; prefer <b>OIDC</b> over cloud keys (next lesson).</p>`,
+      analogy: `A <b>day pass</b> that expires when the job ends.`,
+      hook: `<b>Short-lived beats long-lived. Always.</b>`,
+      words: ['GITHUB_TOKEN', 'permissions', 'personal access token', 'short-lived credentials'],
+      flow: { from: 'sec', to: 'repo', label: 'TOKEN', detail: ['GITHUB_TOKEN (expires after run)'], color: 'teal' },
+      cmds: [{ c: '- run: gh pr comment ${{ github.event.pull_request.number }} --body "Preview ready"\n  env:\n    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}', f: 'ci.yml', o: '', k: 'yaml' }] }
+  ],
+  summary: { title: 'Your config and credentials are handled safely', sub: 'Secrets · vars · environments · GITHUB_TOKEN', text: `<p>Never commit secrets (rotate if you do). Use <code>secrets.X</code> via step-level env, never echo them. Non-sensitive config goes in <code>vars</code>. Environments scope secrets and add reviewers/branch rules. Prefer the short-lived GITHUB_TOKEN and OIDC over long-lived tokens.</p>` },
+  quiz: [
+    { q: 'You committed an API key. First step:', a: ['Delete the commit', 'Rotate/revoke the key', 'Make the repo private', 'Ignore it'], c: 1, why: 'Assume it’s already harvested.' },
+    { q: 'Store AWS_REGION as…', a: ['A secret', 'A variable (vars)', 'Hard-coded', 'An artifact'], c: 1, why: 'Not sensitive.' },
+    { q: 'Require approval before prod deploys:', a: ['Matrix', 'Environment with required reviewers', 'Cache', 'needs'], c: 1, why: 'Protection rules.' },
+    { q: 'Secrets available to PRs from forks?', a: ['Yes', 'No (by default)', 'Only GITHUB_TOKEN write', 'Only on Mondays'], c: 1, why: 'Protects against malicious forks.' }
+  ],
+  challenge: { task: 'Clean this deploy job: remove the hard-coded Slack webhook URL and use ${{ secrets.SLACK_WEBHOOK_URL }} (pass it via env: WEBHOOK), and put the job in the "production" environment. No CRITICAL findings may remain.',
+    secrets: { SLACK_WEBHOOK_URL: 'https://example.invalid/hook' },
+    hint: Y('name: Deploy', 'on:', '  push:', '    branches: [main]', 'permissions:', '  contents: read', 'jobs:', '  deploy:', '    runs-on: ubuntu-latest', '    environment: production', '    steps:', '      - uses: actions/checkout@v4', '      - run: echo "deploying"', '      - name: Notify Slack', '        env:', '          WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}', '        run: curl -s -X POST -d \'{"text":"deployed"}\' "$WEBHOOK"'),
+    starter: Y('name: Deploy', 'on:', '  push:', '    branches: [main]', 'permissions:', '  contents: read', 'jobs:', '  deploy:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - run: echo "deploying"', '      - name: Notify Slack', '        run: curl -s -X POST -d \'{"text":"deployed"}\' https://hooks.slack.com/services/T0123/B0456/abcdEFGHijkl'),
+    check: r => { if (r.error) return r.error; if (FIND(r, /CRITICAL/).length) return 'a hard-coded token/webhook is still in the file'; const d = JOBS(r, 'deploy')[0]; if (!d) return 'keep the deploy job';
+      if (d.env !== 'production') return 'add environment: production to the deploy job';
+      const st = (r.wf.jobs.deploy.steps || []).find(s => s.env && /secrets\.SLACK_WEBHOOK_URL/.test(JSON.stringify(s.env)));
+      return st && /\$WEBHOOK|\$\{WEBHOOK\}/.test(st.run || '') ? true : 'pass the secret via env: WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }} and use "$WEBHOOK" in run'; } },
+  next: `The biggest secret in any cloud pipeline is the AWS credential. Next: delete it entirely with <b>OIDC</b>: short-lived role credentials, no keys stored anywhere.`,
+  cheat: [['${{ secrets.NAME }}', 'secret'], ['${{ vars.NAME }}', 'variable'], ['env: X: ${{ secrets.X }}', 'scope to a step'], ['environment: production', 'gate + scoped secrets'], ['gh secret set NAME', 'CLI'], ['rotate first, then clean history', 'leak response']]
+});
+
+/* ============ 06 OIDC TO AWS ============ */
+LESSONS.push({
+  id: 'oidc', num: 6, cat: 'aws', layer: 3, mins: 16,
+  title: 'OIDC: Keyless Deploys to AWS', short: 'No long-lived keys, ever',
+  overview: `<p>Instead of storing <code>AWS_ACCESS_KEY_ID</code> in GitHub, let GitHub prove who it is with an <b>OIDC token</b> and let AWS hand back <b>temporary role credentials</b> (valid ~1 hour) via <code>sts:AssumeRoleWithWebIdentity</code>. You configure an IAM <b>identity provider</b> once and a role whose <b>trust policy</b> only trusts your repo and branch.</p>`,
+  hook: `<b>"No keys to leak if there are no keys."</b>`,
+  why: `This is the modern standard for CI → cloud authentication, and a top Cloud Security interview topic: it removes the most dangerous secret in your pipeline and lets you scope deploy rights to one repo and branch.`,
+  scene: { type: 'graph', nodes: [
+    { id: 'job', x: 110, y: 240, icon: 'gear', label: 'GitHub job', sub: 'id-token: write' },
+    { id: 'gho', x: 330, y: 100, icon: 'key', label: 'GitHub OIDC', sub: 'signed JWT' },
+    { id: 'sts', x: 580, y: 240, icon: 'lock', label: 'AWS STS', sub: 'AssumeRoleWithWebIdentity', at: 1 },
+    { id: 'trust', x: 580, y: 420, icon: 'shield', label: 'Trust policy', sub: 'repo:rmctech-ai/app:ref:refs/heads/main', at: 2 },
+    { id: 'aws', x: 840, y: 240, icon: 'cloud', label: 'AWS', sub: 'temp creds · 1 h', at: 3 }
+  ], edges: [{ a: 'job', b: 'gho' }, { a: 'gho', b: 'sts' }, { a: 'job', b: 'sts' }, { a: 'sts', b: 'trust' }, { a: 'sts', b: 'aws' }] },
+  steps: [
+    { t: 'Why keys are bad', sub: 'Long-lived = long-risk',
+      body: `<p>IAM user access keys never expire unless you rotate them, work from anywhere, and are copied into every repo that deploys. One leaked log, fork or misconfigured action = full access until someone notices. OIDC credentials last minutes to an hour and are bound to a specific repo/branch.</p>`,
+      analogy: `A <b>permanent master key</b> vs a <b>hotel key card</b> that stops working at checkout.`,
+      hook: `<b>Keys live forever; OIDC creds die in an hour.</b>`,
+      words: ['long-lived keys', 'IAM user', 'credential leak', 'temporary credentials', 'blast radius'],
+      flow: { from: 'job', to: 'gho', label: 'REQUEST', detail: ['request ID token (aud: sts.amazonaws.com)'], color: 'blue' }, focus: ['job', 'gho'],
+      cmds: [{ c: 'aws iam list-access-keys --user-name ci-deployer --query "AccessKeyMetadata[].CreateDate"', o: '[\n    "2023-02-14T03:11:09+00:00"\n]', k: 'err' }] },
+    { t: 'Identity provider (once)', sub: 'token.actions.githubusercontent.com',
+      body: `<p>Create an IAM OIDC identity provider for <code>https://token.actions.githubusercontent.com</code> with audience <code>sts.amazonaws.com</code>. One per AWS account. (In IaC: <code>AWS::IAM::OIDCProvider</code>.)</p>`,
+      analogy: `Registering GitHub as a <b>trusted ID issuer</b>, like accepting a government passport office.`,
+      hook: `<b>One provider per account, then roles per repo.</b>`,
+      words: ['OIDC identity provider', 'token.actions.githubusercontent.com', 'audience', 'AWS::IAM::OIDCProvider'],
+      flow: { from: 'gho', to: 'sts', label: 'JWT', detail: ['sub: repo:rmctech-ai/app:ref:refs/heads/main'], color: 'purple' }, focus: ['gho', 'sts'],
+      cmds: [{ c: 'aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com --client-id-list sts.amazonaws.com', o: '{\n    "OpenIDConnectProviderArn": "arn:aws:iam::111122223333:oidc-provider/token.actions.githubusercontent.com"\n}', k: 'cli' }] },
+    { t: 'The trust policy', sub: 'Only my repo, only main',
+      body: `<p>The deploy role trusts the provider with conditions: <code>token.actions.githubusercontent.com:aud = sts.amazonaws.com</code> and <code>…:sub</code> <b>StringLike</b> <code>repo:rmctech-ai/app:ref:refs/heads/main</code> (or <code>repo:rmctech-ai/app:environment:production</code>). Without the <code>sub</code> condition, <b>any</b> GitHub repo in the world could assume your role.</p>`,
+      analogy: `The hotel accepts passports, but <b>only for guests on tonight's booking list</b>.`,
+      hook: `<b>Always pin aud AND sub.</b>`,
+      words: ['trust policy', 'AssumeRoleWithWebIdentity', 'sub claim', 'aud claim', 'StringLike', 'environment claim'],
+      flow: { from: 'sts', to: 'trust', label: 'CHECK', detail: ['sub matches repo:rmctech-ai/app:ref:refs/heads/main ✓'], color: 'amber' }, focus: ['sts', 'trust'],
+      cmds: [{ c: '{\n  "Effect": "Allow",\n  "Principal": {"Federated": "arn:aws:iam::111122223333:oidc-provider/token.actions.githubusercontent.com"},\n  "Action": "sts:AssumeRoleWithWebIdentity",\n  "Condition": {\n    "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},\n    "StringLike": {"token.actions.githubusercontent.com:sub": "repo:rmctech-ai/app:ref:refs/heads/main"}\n  }\n}', f: 'trust-policy.json', o: '', k: 'yaml' }],
+      cloud: `<b>Link</b>: IAM Explorer lesson 7 (roles & STS) explains trust policies in depth.` },
+    { t: 'The workflow side', sub: 'id-token: write + role-to-assume',
+      body: `<p>The job needs <code>permissions: id-token: write</code> (to request the JWT) and <code>contents: read</code>. Then <code>aws-actions/configure-aws-credentials@v4</code> with <code>role-to-assume</code> and <code>aws-region</code>. Every later step in that job (aws, sam, cdk, terraform) uses the temporary credentials automatically.</p>`,
+      analogy: `Show the passport (JWT) at the desk, get a <b>key card</b> (temp creds), open the rooms you're allowed.`,
+      hook: `<b>id-token: write → configure-aws-credentials → deploy.</b>`,
+      words: ['permissions id-token: write', 'configure-aws-credentials', 'role-to-assume', 'aws-region', 'role-session-name'],
+      flow: { from: 'sts', to: 'aws', label: 'CREDS', detail: ['AccessKeyId ASIA… expires in 1h'], color: 'green' }, focus: ['job', 'sts', 'aws'],
+      cmds: [{ c: 'permissions:\n  id-token: write\n  contents: read\n...\n      - uses: aws-actions/configure-aws-credentials@v4\n        with:\n          role-to-assume: arn:aws:iam::111122223333:role/github-deploy\n          aws-region: ap-southeast-1', f: 'deploy.yml', o: '', k: 'yaml' }] },
+    { t: 'Least privilege for deploy roles', sub: 'One role per repo/environment',
+      body: `<p>Give each repo (and environment) its own role with only what deploys need, e.g. <code>cloudformation:*</code> on its stacks plus <code>iam:PassRole</code> for the CloudFormation service role, rather than AdministratorAccess. Check CloudTrail: <code>AssumeRoleWithWebIdentity</code> events show exactly which repo/branch got in.</p>`,
+      analogy: `The contractor's key card opens <b>the floors they're renovating</b>, not the whole building.`,
+      hook: `<b>Per repo, per env, minimal, audited.</b>`,
+      words: ['least privilege', 'iam:PassRole', 'CloudFormation service role', 'CloudTrail', 'per-environment roles'],
+      flow: { from: 'trust', to: 'aws', label: 'AUDIT', detail: ['CloudTrail: AssumeRoleWithWebIdentity by repo:rmctech-ai/app'], color: 'teal' },
+      cmds: [{ c: 'aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=AssumeRoleWithWebIdentity --max-results 1 --query "Events[0].Username"', o: '"repo:rmctech-ai/app:ref:refs/heads/main"', k: 'cli' }] }
+  ],
+  summary: { title: 'Your pipeline has no AWS keys', sub: 'OIDC provider · trust policy (aud + sub) · id-token: write · least privilege', text: `<p>Create the GitHub OIDC provider once; create a deploy role whose trust policy pins <code>aud</code> and <code>sub</code> to your repo/branch or environment. In the workflow grant <code>id-token: write</code> and use configure-aws-credentials with <code>role-to-assume</code>. Keep deploy roles minimal and audit AssumeRoleWithWebIdentity in CloudTrail.</p>` },
+  quiz: [
+    { q: 'Workflow permission required for OIDC:', a: ['contents: write', 'id-token: write', 'actions: write', 'packages: read'], c: 1, why: 'To request the ID token.' },
+    { q: 'Without a sub condition in the trust policy…', a: ['Nothing changes', 'Any GitHub repo could assume the role', 'OIDC fails', 'Only forks work'], c: 1, why: 'Always pin the repo.' },
+    { q: 'OIDC credentials are…', a: ['Permanent keys', 'Temporary (≈1 hour) role credentials', 'Passwords', 'SSH keys'], c: 1, why: 'Issued by STS.' },
+    { q: 'STS API used:', a: ['GetSessionToken', 'AssumeRoleWithWebIdentity', 'AssumeRoleWithSAML', 'GetFederationToken'], c: 1, why: 'Web identity = OIDC.' }
+  ],
+  challenge: { task: 'Switch the deploy job from stored access keys to OIDC: give the job permissions id-token: write and contents: read, and configure credentials with role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-deploy and aws-region ap-southeast-1 (no aws-access-key-id). sam deploy must succeed.',
+    hint: Y('name: Deploy', 'on:', '  push:', '    branches: [main]', 'permissions:', '  contents: read', 'jobs:', '  deploy:', '    runs-on: ubuntu-latest', '    permissions:', '      id-token: write', '      contents: read', '    steps:', '      - uses: actions/checkout@v4', '      - uses: aws-actions/configure-aws-credentials@v4', '        with:', '          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-deploy', '          aws-region: ap-southeast-1', '      - run: sam deploy --stack-name raul-app --no-confirm-changeset'),
+    starter: Y('name: Deploy', 'on:', '  push:', '    branches: [main]', 'permissions:', '  contents: read', 'jobs:', '  deploy:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - uses: aws-actions/configure-aws-credentials@v4', '        with:', '          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}', '          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}', '          aws-region: ap-southeast-1', '      - run: sam deploy --stack-name raul-app --no-confirm-changeset'),
+    secrets: { AWS_ACCOUNT_ID: '111122223333', AWS_ACCESS_KEY_ID: 'AKIAEXAMPLEEXAMPLE00', AWS_SECRET_ACCESS_KEY: 'x' },
+    check: r => { if (r.error) return r.error; const d = JOBS(r, 'deploy')[0]; if (!d) return 'keep the deploy job';
+      if (FIND(r, /Long-lived/).length) return 'remove aws-access-key-id / aws-secret-access-key (and the secrets references)';
+      if (!d.aws || d.aws.mode !== 'oidc') return 'credentials must come from role-to-assume (OIDC). Check the configure-aws-credentials step log';
+      return d.status === 'success' && d.deployed.includes('raul-app') ? true : 'sam deploy should succeed'; } },
+  next: `Credentials solved. Now deploy real infrastructure from the pipeline: <b>lint → scan → deploy</b> CloudFormation/SAM with change sets.`,
+  cheat: [['permissions: id-token: write', 'allow OIDC'], ['configure-aws-credentials@v4 role-to-assume:', 'assume role'], ['token.actions.githubusercontent.com:sub', 'pin repo/branch'], [':aud = sts.amazonaws.com', 'pin audience'], ['AssumeRoleWithWebIdentity', 'STS call'], ['one role per repo/env', 'least privilege']]
+});

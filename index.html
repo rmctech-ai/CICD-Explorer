@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD Explorer · Learn CI/CD & DevSecOps</title>
+<meta name="description" content="Interactive GitHub Actions, OIDC, AWS deployment and DevSecOps lessons with animated pipeline flows and a workflow simulator lab.">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p style="padding:2rem">CI/CD Explorer needs JavaScript to animate the diagrams and run the lessons.</p></noscript>
+
+<header class="topbar">
+  <a class="brand" href="#" id="brandHome" title="Home">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 36 12v16L20 37 4 28V12z" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M4 12l16 9 16-9M20 21v16" fill="none" stroke="currentColor" stroke-width="2.4"/><text x="20" y="31" text-anchor="middle" font-size="8.5" font-weight="800" fill="currentColor" font-family="monospace">CI</text></svg>
+    <span><b>CI/CD <i>EXPLORER</i></b><small>LEARN CI/CD & DEVSECOPS</small></span>
+  </a>
+  <div class="stack" title="Which skill level this lesson builds">
+    <span class="lbl">SKILL LEVEL</span><span class="lbl" id="layerName">—</span>
+    <div class="layers" id="layers"></div>
+  </div>
+  <button class="search" id="searchBtn"><svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4 4"/></svg><span>Search lessons &amp; commands</span><kbd>Ctrl K</kbd></button>
+  <div class="tools">
+    <button class="tbtn" id="cheatBtn" title="Cheat sheet">CHEAT SHEET</button>
+    <div class="xp" title="Your XP — earned by reading steps, finishing lessons and acing quizzes">
+      <span class="lvl" id="lvlName">NEWBIE</span>
+      <div class="xpbar"><div id="xpFill"></div></div>
+      <span class="xpn"><b id="xpNum">0</b> XP</span>
+    </div>
+    <a class="by" href="https://github.com/rmctech-ai" target="_blank" rel="noopener" title="GitHub: rmctech-ai"><span>BUILT BY</span><b>Raul · rmctech-ai</b></a>
+    <div class="theme"><button id="lightBtn" class="on" title="Light">☀</button><button id="darkBtn" title="Dark">☾</button></div>
+  </div>
+</header>
+
+<main class="app">
+  <aside class="sidebar">
+    <div class="ph"><h2>CI/CD LESSONS</h2><span class="prog" id="progTxt">0%</span></div>
+    <div class="filters" id="filters"></div>
+    <div class="list" id="lessonList"></div>
+  </aside>
+
+  <section class="stage panel">
+    <div class="tabs" id="stageTabs">
+      <button data-tab="diagram" class="on">◈ DIAGRAM</button>
+      <button data-tab="terminal">$_ COMMANDS</button>
+      <button data-tab="playground">▶ WORKFLOW SIMULATOR</button>
+    </div>
+    <div class="stagebody" id="stageBody"></div>
+  </section>
+
+  <section class="details panel" id="details"></section>
+
+  <section class="flow panel">
+    <div class="flowhead">
+      <h2>PIPELINE FLOW</h2>
+      <div class="legend" id="legend"></div>
+      <div class="ctrls">
+        <select id="speed" title="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+        <button id="prevBtn" title="Previous (←)">‹</button>
+        <button id="playBtn" class="primary" title="Play / pause (Space)">▶ PLAY</button>
+        <button id="stepBtn" title="Next (→)">STEP</button>
+        <button id="resetBtn" title="Restart lesson">↻</button>
+      </div>
+    </div>
+    <div class="flowtable">
+      <table>
+        <thead><tr><th>NO.</th><th>TIME</th><th>WHERE</th><th>TYPE</th><th>CODE</th><th>OUTPUT</th><th>STATUS</th></tr></thead>
+        <tbody id="flowRows"></tbody>
+      </table>
+      <div class="empty" id="flowEmpty">No code has run yet. Press PLAY or STEP.</div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="searchModal" hidden>
+  <div class="box">
+    <input id="searchInput" placeholder="Search: OIDC, needs, matrix, canary, pin SHA…" autocomplete="off">
+    <div id="searchResults"></div>
+  </div>
+</div>
+<div class="modal" id="cheatModal" hidden><div class="box wide" id="cheatBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="js/course.js"></script>
+<script src="js/lessons/01-actions.js"></script>
+<script src="js/lessons/02-deploy.js"></script>
+<script src="js/lessons/03-ship.js"></script>
+<script src="js/lessons/04-secure.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/diagram.js"></script>
+<script src="js/yaml.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

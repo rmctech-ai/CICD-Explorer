@@ -1,0 +1,51 @@
+/* Simple line icons drawn around (0,0), roughly 60x60. Class "ico" gets themed stroke. */
+window.ICONS = (function () {
+  const I = {};
+  I.user = () => `<g class="ico"><circle cx="0" cy="-12" r="11" class="f"/><path d="M-22 24c0-16 9-24 22-24s22 8 22 24z" class="f"/></g>`;
+  I.root = () => `<g class="ico"><circle cx="0" cy="-12" r="11" class="f"/><path d="M-22 24c0-16 9-24 22-24s22 8 22 24z" class="f"/><path d="M-12 -24l4-9 8 6 8-6 4 9z" style="fill:#f59e0b;stroke:#b45309"/></g>`;
+  I.users = () => `<g class="ico"><circle cx="-13" cy="-10" r="8" class="f"/><circle cx="13" cy="-10" r="8" class="f"/><path d="M-30 20c0-12 7-18 17-18s17 6 17 18z" class="f"/><path d="M-4 20c0-12 7-18 17-18s17 6 17 18z" class="f"/></g>`;
+  I.server = () => `<g class="ico"><rect x="-22" y="-28" width="44" height="56" rx="4" class="f"/><rect x="-16" y="-21" width="32" height="10" rx="2"/><rect x="-16" y="-5" width="32" height="10" rx="2"/><rect x="-16" y="11" width="32" height="10" rx="2"/><circle cx="10" cy="-16" r="2" class="s"/><circle cx="10" cy="0" r="2" class="s"/><circle cx="10" cy="16" r="2" class="s"/></g>`;
+  I.laptop = () => `<g class="ico"><rect x="-24" y="-22" width="48" height="32" rx="3" class="f"/><path d="M-32 18h64l-6 8h-52z"/><path d="M-16 -12l6 5-6 5M-6 0h10"/></g>`;
+  I.file = () => `<g class="ico"><path d="M-18 -26h24l12 12v40h-36z" class="f"/><path d="M6 -26v12h12"/><path d="M-11 -4h22M-11 4h22M-11 12h14"/></g>`;
+  I.script = () => `<g class="ico"><path d="M-18 -26h24l12 12v40h-36z" class="f"/><path d="M6 -26v12h12"/><path d="M-10 0l6 5-6 5M0 12h10"/></g>`;
+  I.folder = () => `<g class="ico"><path d="M-28 -18h18l5 6h33v34h-56z" class="f"/><path d="M-28 -6h56"/></g>`;
+  I.terminal = () => `<g class="ico"><rect x="-28" y="-22" width="56" height="44" rx="5" class="f"/><path d="M-28 -12h56"/><path d="M-17 -2l8 6-8 6M-4 12h14"/></g>`;
+  I.kernel = () => `<g class="ico"><rect x="-20" y="-20" width="40" height="40" rx="5" class="f"/><rect x="-10" y="-10" width="20" height="20" rx="2"/><path d="M-12 -20v-8M0 -20v-8M12 -20v-8M-12 20v8M0 20v8M12 20v8M-20 -12h-8M-20 0h-8M-20 12h-8M20 -12h8M20 0h8M20 12h8"/></g>`;
+  I.cpu = I.kernel;
+  I.hardware = () => `<g class="ico"><rect x="-30" y="-14" width="60" height="28" rx="4" class="f"/><path d="M-22 -6h14v12h-14zM-2 -6h8v12h-8zM12 -6h10v12h-10z"/><path d="M-26 14v8M26 14v8"/></g>`;
+  I.cloud = () => `<g class="ico"><path d="M-22 16a12 12 0 0 1 0-24a17 17 0 0 1 32-6a12 12 0 0 1 14 15a8 8 0 0 1-2 15z" class="f"/></g>`;
+  I.globe = () => `<g class="ico"><circle r="22" class="f"/><ellipse rx="10" ry="22"/><path d="M-22 0h44M-18 -11h36M-18 11h36"/></g>`;
+  I.lock = () => `<g class="ico"><path d="M-11 -6v-8a11 11 0 0 1 22 0v8"/><rect x="-18" y="-6" width="36" height="30" rx="4" class="f"/><circle cy="6" r="3" class="s"/><path d="M0 9v6"/></g>`;
+  I.key = () => `<g class="ico"><circle cx="-12" cy="0" r="11" class="f"/><circle cx="-12" cy="0" r="3"/><path d="M-1 0h28M18 0v8M24 0v6"/></g>`;
+  I.gear = () => `<g class="ico"><path d="M-4 -24h8l2 7 6 3 7-3 5 6-4 6 1 7 6 4-2 8-7 0-4 6 2 7-7 4-5-5h-6l-5 5-7-4 2-7-4-6-7 0-2-8 6-4 1-7-4-6 5-6 7 3 6-3z" class="f"/><circle r="8"/></g>`;
+  I.shield = () => `<g class="ico"><path d="M0 -26l22 8v14c0 16-10 26-22 30c-12-4-22-14-22-30v-14z" class="f"/><path d="M-9 0l6 6 12-12"/></g>`;
+  I.firewall = () => `<g class="ico"><rect x="-26" y="-22" width="52" height="44" class="f"/><path d="M-26 -11h52M-26 0h52M-26 11h52M-8 -22v11M10 -11v11M-14 0v11M6 11v11"/></g>`;
+  I.box = () => `<g class="ico"><path d="M0 -26l24 12v28l-24 12-24-12v-28z" class="f"/><path d="M-24 -14l24 12 24-12M0 -2v28"/></g>`;
+  I.pkg = I.box;
+  I.log = () => `<g class="ico"><rect x="-20" y="-26" width="40" height="52" rx="3" class="f"/><path d="M-12 -14h24M-12 -6h24M-12 2h16M-12 10h24M-12 18h10"/></g>`;
+  I.clock = () => `<g class="ico"><circle r="22" class="f"/><path d="M0 -12v12l9 6"/></g>`;
+  I.process = () => `<g class="ico"><circle r="20" class="f"/><path d="M-6 -9l14 9-14 9z" class="s"/></g>`;
+  I.disk = () => `<g class="ico"><ellipse cy="-14" rx="24" ry="8" class="f"/><path d="M-24 -14v28c0 4 11 8 24 8s24-4 24-8v-28"/><path d="M-24 0c0 4 11 8 24 8s24-4 24-8"/></g>`;
+  I.pipe = () => `<g class="ico"><rect x="-30" y="-10" width="60" height="20" rx="10" class="f"/><path d="M-12 -10v20M12 -10v20"/></g>`;
+  I.bell = () => `<g class="ico"><path d="M-16 12v-12a16 16 0 0 1 32 0v12l5 6h-42z" class="f"/><path d="M-5 22a5 5 0 0 0 10 0"/></g>`;
+  I.eye = () => `<g class="ico"><path d="M-26 0c8-12 17-17 26-17s18 5 26 17c-8 12-17 17-26 17s-18-5-26-17z" class="f"/><circle r="7" class="s"/></g>`;
+  I.bug = () => `<g class="ico"><ellipse rx="13" ry="18" class="f"/><path d="M-13 -6h-9M-13 6h-9M13 -6h9M13 6h9M0 -18v36M-6 -22l-5-6M6 -22l5-6"/></g>`;
+  I.list = () => `<g class="ico"><rect x="-24" y="-24" width="48" height="48" rx="4" class="f"/><path d="M-14 -12h28M-14 0h28M-14 12h20"/></g>`;
+  I.book = () => `<g class="ico"><path d="M-26 -18c10-4 18-4 26 2c8-6 16-6 26-2v38c-10-4-18-4-26 2c-8-6-16-6-26-2z" class="f"/><path d="M0 -16v38"/></g>`;
+  I.search = () => `<g class="ico"><circle cx="-5" cy="-5" r="15" class="f"/><path d="M6 6l16 16"/></g>`;
+  I.distro = () => `<g class="ico"><circle r="22" class="f"/><circle r="8"/><path d="M0 -22v14M0 8v14M-22 0h14M8 0h14"/></g>`;
+  I.screen = I.terminal;
+  return I;
+})();
+/* extra icons for Python Explorer */
+(function (I) {
+  I.code = () => `<g class="ico"><rect x="-28" y="-22" width="56" height="44" rx="5" class="f"/><path d="M-10 -8l-9 8 9 8M10 -8l9 8-9 8M4 -12l-8 24"/></g>`;
+  I.json = () => `<g class="ico"><rect x="-26" y="-24" width="52" height="48" rx="5" class="f"/><path d="M-8 -14c-6 0-6 4-6 8s-1 6-5 6c4 0 5 2 5 6s0 8 6 8M8 -14c6 0 6 4 6 8s1 6 5 6c-4 0-5 2-5 6s0 8-6 8"/></g>`;
+  I.func = () => `<g class="ico"><rect x="-28" y="-22" width="56" height="44" rx="10" class="f"/><path d="M-6 -12c-6 0-6 4-7 10s-1 12-7 12M-18 -2h10M2 -6l12 14M14 -6l-12 14"/></g>`;
+  I.api = () => `<g class="ico"><circle r="22" class="f"/><path d="M-12 -4h24l-6-6M12 6h-24l6 6"/></g>`;
+  I.bucket = () => `<g class="ico"><ellipse cy="-16" rx="22" ry="7" class="f"/><path d="M-22 -16l5 36c1 4 9 6 17 6s16-2 17-6l5-36"/></g>`;
+  I.lambda = () => `<g class="ico"><rect x="-24" y="-24" width="48" height="48" rx="6" class="f"/><path d="M-10 -14h6l14 28M-2 2l-8 12"/></g>`;
+  I.robot = () => `<g class="ico"><rect x="-22" y="-16" width="44" height="34" rx="8" class="f"/><circle cx="-9" cy="0" r="4" class="s"/><circle cx="9" cy="0" r="4" class="s"/><path d="M0 -16v-8M-6 10h12M-22 0h-6M22 0h6"/></g>`;
+  I.blueprint = () => `<g class="ico"><rect x="-26" y="-22" width="52" height="44" rx="3" class="f"/><path d="M-18 -12h14v12h-14zM2 -12h16M2 -4h12M-18 8h36M-18 14h24" stroke-dasharray="3 2"/></g>`;
+  I.vault = () => `<g class="ico"><rect x="-24" y="-22" width="48" height="44" rx="4" class="f"/><circle r="10"/><path d="M0 -10v4M0 6v4M-10 0h4M6 0h4"/></g>`;
+})(window.ICONS);
