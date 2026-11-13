@@ -60,6 +60,7 @@
   function qpOpen(html) { quizCss(); qpClose(); const m = document.createElement('div'); m.className = 'qp'; m.innerHTML = `<div class="box" role="dialog" aria-modal="true">${html}</div>`; m.onclick = e => { if (e.target === m) qpClose(); }; document.body.appendChild(m); document.addEventListener('keydown', qpKey, true); const b = m.querySelector('[data-qp=main]'); if (b) b.focus(); return m; }
   const L = i => String.fromCharCode(65 + i);
   function stripTags(h) { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent || ''; }
+  function qpOthers(q, ai) { if (!q.w) return ''; const li = q.a.map((a, i) => i === q.c || !q.w[i] ? '' : `<li${i === ai ? ' style="font-weight:700"' : ''}>${L(i)}. ${esc(a)}: ${q.w[i]}</li>`).join(''); return li ? `<div class="why" style="border-color:var(--red)"><b style="color:var(--red)">WHY NOT THE OTHERS</b><ul style="margin:3px 0 0;padding-left:16px">${li}</ul></div>` : ''; }
   function quizPop(l, qi, ai) {
     const q = l.quiz[qi], ok = ai === q.c, ans = P.quiz[l.id] || {};
     const allDone = l.quiz.every((_, i) => ans[i] != null);
@@ -67,7 +68,7 @@
     const m = qpOpen(`<div class="qph ${ok ? 'qok' : 'qno'}">${ok ? '✓ CORRECT' : '✕ NOT QUITE'}<small>QUESTION ${qi + 1} OF ${l.quiz.length}${ok ? ' · +20 XP' : ''}</small></div>
       <div class="bd"><div class="qq">${esc(q.q)}</div>
       ${ok ? `<div class="ans r"><b>YOUR ANSWER ✓</b>${L(ai)}. ${esc(q.a[ai])}</div>` : `<div class="ans w"><b>YOUR ANSWER ✕</b>${L(ai)}. ${esc(q.a[ai])}</div><div class="ans r"><b>CORRECT ANSWER</b>${L(q.c)}. ${esc(q.a[q.c])}</div>`}
-      <div class="why"><b>WHY</b>${q.why}</div>
+      <div class="why"><b>WHY</b>${q.why}</div>${qpOthers(q, ai)}
       ${l.hook ? `<div class="hk"><b>★ REMEMBER</b>${l.hook}</div>` : ''}</div>
       <div class="row">${allDone ? `<button data-qp="main">SEE MY SCORE →</button>` : next >= 0 ? `<button class="gh" data-qp="close">CLOSE</button><button data-qp="main">NEXT QUESTION ↓</button>` : `<button data-qp="main">GOT IT</button>`}</div>`);
     m.querySelector('[data-qp=main]').onclick = () => { qpClose(); if (allDone) quizSummary(l); else if (next >= 0) { const el = document.querySelector(`.q[data-q="${next}"]`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
@@ -284,7 +285,7 @@
     else if (a === 'next') next(); else if (a === 'prev') prev(); else if (a === 'overview') go(st.lesson.id, -1);
     else if (a === 'nextlesson') { const nl = LESSONS[LESSONS.indexOf(st.lesson) + 1]; if (nl) go(nl.id, -1); }
     else if (a === 'playground') { st.tab = 'playground'; renderStage(); }
-    if (t.dataset.a != null) { const qi = +t.closest('.q').dataset.q, ai = +t.dataset.a, l = st.lesson; P.quiz[l.id] = P.quiz[l.id] || {}; if (P.quiz[l.id][qi] != null) return; P.quiz[l.id][qi] = ai; save(); if (ai === l.quiz[qi].c) addXP(20, 'correct answer'); const y = $('#details').scrollTop; renderDetails(); $('#details').scrollTop = y; quizPop(l, qi, ai); }
+    if (t.dataset.a != null) { const qi = +t.closest('.q').dataset.q, ai = +t.dataset.a, l = st.lesson; P.quiz[l.id] = P.quiz[l.id] || {}; if (P.quiz[l.id][qi] != null) return; P.quiz[l.id][qi] = ai; save(); if (ai === l.quiz[qi].c) addXP(20, 'correct answer'); if (window.STUDY) STUDY.onAnswer(l, qi, ai); const y = $('#details').scrollTop; renderDetails(); $('#details').scrollTop = y; quizPop(l, qi, ai); }
   });
   $('#playBtn').onclick = play; $('#stepBtn').onclick = () => { stop(); next(); }; $('#prevBtn').onclick = () => { stop(); prev(); }; $('#resetBtn').onclick = () => go(st.lesson.id, -1);
   $('#searchBtn').onclick = openSearch; $('#cheatBtn').onclick = openCheat; $('#brandHome').onclick = e => { e.preventDefault(); go(LESSONS[0].id, -1); };
